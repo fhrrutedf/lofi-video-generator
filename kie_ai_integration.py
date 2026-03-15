@@ -189,7 +189,7 @@ class KieAIClient:
     def generate_video(
         self,
         prompt: str,
-        image_url: str,
+        image_url: Optional[str] = None,
         model: str = "veo3",
         aspect_ratio: str = "16:9",
         wait_for_completion: bool = True,
@@ -198,17 +198,23 @@ class KieAIClient:
         """
         Generate video animation using Veo 3.1 via Kie.ai
         """
-        print(f"🎬 Animating image with Veo 3.1...")
+        print(f"🎬 Generating video with Veo 3.1...")
         print(f"   Prompt: {prompt[:100]}...")
         
         payload = {
             "prompt": prompt,
-            "imageUrls": [image_url],
             "model": model,
-            "generationType": "FIRST_AND_LAST_FRAMES_2_VIDEO",
             "aspectRatio": aspect_ratio,
             "enableTranslation": True
         }
+        
+        if image_url:
+            payload["imageUrls"] = [image_url]
+            payload["generationType"] = "FIRST_AND_LAST_FRAMES_2_VIDEO"
+            print("   Mode: Image-to-Video")
+        else:
+            payload["generationType"] = "TEXT_2_VIDEO"
+            print("   Mode: Text-to-Video")
         
         try:
             response = requests.post(
