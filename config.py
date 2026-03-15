@@ -11,7 +11,7 @@ KIE_API_KEY = os.getenv("KIE_API_KEY", "")  # Kie.ai for music/video generation
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # Google Gemini AI
 
 # Output Video Settings
-OUTPUT_DURATION = 120  # 2 minutes for testing (originally 14400)
+OUTPUT_DURATION = 36000  # 10 hours (originally 120)
 OUTPUT_WIDTH = 1920
 OUTPUT_HEIGHT = 1080
 OUTPUT_FPS = 30
