@@ -1,0 +1,10 @@
+{
+  "orchestration": null,
+  "assets": {
+    "music_file": null,
+    "video_clip": null,
+    "final_video": null
+  },
+  "image_path": null,
+  "ai_provider": "auto"
+}
