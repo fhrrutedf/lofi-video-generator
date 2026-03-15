@@ -411,23 +411,30 @@ with col1:
     
     idea = st.text_input("📝 فكرة الفيديو", placeholder="مثلاً: جو ممطر للدراسة")
     
-    # Image Upload
-    uploaded_file = st.file_uploader("🖼️ صورة الخلفية", type=['png', 'jpg', 'webp'])
-    if uploaded_file:
-        try:
-            from PIL import Image
-            img = Image.open(uploaded_file)
-            if img.mode != 'RGB': img = img.convert('RGB')
-            # Save
-            path = Path("temp/uploads/background_clean.png")
-            path.parent.mkdir(parents=True, exist_ok=True)
-            img.save(path)
-            st.session_state.image_path = str(path)
-            st.image(str(path), use_container_width=True)
-            save_state() # Save progress
-        except: pass
-    elif st.session_state.get("image_path") and os.path.exists(st.session_state.image_path):
-        st.image(st.session_state.image_path, caption="الصورة المحفوظة")
+    # Mode Selection
+    mode = st.radio("نوع الفيديو", ["صورة متتحركة (يجب رفع صورة)", "فيديو من نص (ستايل أنمي وموسيقى لوفي مباشر)"], horizontal=False)
+    
+    if "صورة" in mode:
+        # Image Upload
+        uploaded_file = st.file_uploader("🖼️ صورة الخلفية", type=['png', 'jpg', 'webp'])
+        if uploaded_file:
+            try:
+                from PIL import Image
+                img = Image.open(uploaded_file)
+                if img.mode != 'RGB': img = img.convert('RGB')
+                # Save
+                path = Path("temp/uploads/background_clean.png")
+                path.parent.mkdir(parents=True, exist_ok=True)
+                img.save(path)
+                st.session_state.image_path = str(path)
+                st.image(str(path), use_container_width=True)
+                save_state() # Save progress
+            except: pass
+        elif st.session_state.get("image_path") and os.path.exists(st.session_state.image_path) and st.session_state.image_path != "N/A":
+            st.image(st.session_state.image_path, caption="الصورة المحفوظة")
+    else:
+        st.session_state.image_path = "N/A"
+        st.info("سيتكفل الذكاء الاصطناعي برسم المشهد بناءً على فكرتك (بنفس طريقة قنوات Lofi الشهيرة!)")
 
     # Generate Prompts Button
     if st.button("✨ توليد الوصف (AI)", use_container_width=True):

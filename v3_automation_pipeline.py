@@ -123,7 +123,7 @@ class LofiV3Pipeline:
             
         return None
 
-    def run(self, user_idea: str, image_path: str, output_name: Optional[str] = None):
+    def run(self, user_idea: str, image_path: Optional[str] = None, output_name: Optional[str] = None):
         """
         Full Pipeline: Idea -> Prompts -> Media -> Video
         """
@@ -131,13 +131,15 @@ class LofiV3Pipeline:
              print("❌ No AI provider configured. Please check your API keys.")
              return {"success": False, "error": "No AI Provider"}
              
-        # Normalize paths
-        image_path = str(Path(image_path).absolute())
-        
-        # Check image
-        if not Path(image_path).exists():
-            print(f"❌ Image file not found: {image_path}")
-            return {"success": False, "error": "Image not found"}
+        # Normalize paths if image provided
+        if image_path and image_path != "N/A":
+            image_path = str(Path(image_path).absolute())
+            # Check image
+            if not Path(image_path).exists():
+                print(f"❌ Image file not found: {image_path}")
+                return {"success": False, "error": "Image not found"}
+        else:
+            image_path = None
 
         # --- PHASE 1: ORCHESTRATION ---
         # (Using local path for Gemini/OpenRouter to describe it textually is fine if they don't see it, 
@@ -199,16 +201,20 @@ class LofiV3Pipeline:
         # 1. Decide on Image URL for Veo
         veo_image_url = image_path
         
-        is_local = not image_path.startswith("http")
-        if is_local:
-            # Upload to temp storage to get public URL
-            public_url = self._upload_temp_image(image_path)
-            if public_url:
-                veo_image_url = public_url
-                print("ℹ️ Using public URL for animation.")
-            else:
-                print("⚠️ Failed to generate public URL. Falling back to Text-to-Video.")
-                veo_image_url = None # Fallback to Text-to-Video
+        if image_path:
+            is_local = not image_path.startswith("http")
+            if is_local:
+                # Upload to temp storage to get public URL
+                public_url = self._upload_temp_image(image_path)
+                if public_url:
+                    veo_image_url = public_url
+                    print("ℹ️ Using public URL for animation.")
+                else:
+                    print("⚠️ Failed to generate public URL. Falling back to Text-to-Video.")
+                    veo_image_url = None # Fallback to Text-to-Video
+        else:
+            print("ℹ️ No image provided. Using Text-to-Video mode.")
+            veo_image_url = None
         
         # 2. Call Veo
         video_result = self.kie.generate_video(
@@ -232,19 +238,23 @@ class LofiV3Pipeline:
         
         final_output = self.output_dir / output_name
         
-        # If we have an animated clip, loop it. Otherwise, use the static image.
+        # If we have an animated clip, loop it. Otherwise, use the static image (if available).
         if video_clip_file and video_clip_file.exists():
             success = self.finalize_video_from_clip(
                 video_path=str(video_clip_file),
                 audio_path=str(music_file),
                 output_path=str(final_output)
             )
-        else:
+        elif image_path and Path(image_path).exists():
+            print("⚠️ Using fallback: Static image with music.")
             success = self.finalize_video_from_image(
                 image_path=image_path,  # Use local path
                 audio_path=str(music_file),
                 output_path=str(final_output)
             )
+        else:
+            print("❌ No visual content generated (Veo failed and no source image).")
+            return {"success": False, "error": "No visual content available"}
         
         if success:
             print(f"\n🎉 SUCCESS! Video created: {final_output}")

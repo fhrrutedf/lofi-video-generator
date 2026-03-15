@@ -115,6 +115,14 @@ class GeminiClient:
         """
         The Orchestrator Prompt: Converts simple user input into technical data for music, video and SEO.
         """
+        aesthetic_rules = ""
+        if not image_url or image_url == "N/A":
+            aesthetic_rules = """
+4. CRITICAL: Since NO IMAGE is provided, the 'veo_prompt' MUST strictly describe a classic YouTube Lofi aesthetic scene for a Text-to-Video AI.
+5. In 'veo_prompt', strictly include terms: "Anime style, 2D animation, cozy room, raining outside the window, soft neon lighting, lo-fi hip hop aesthetic, looping animation, 4k resolution." 
+6. Adapt the scene to match the user's title while keeping the anime/lofi loop vibe prominent.
+"""
+
         prompt = f"""
 أنت خبير محتوى YouTube Lofi. وظيفتك استلام (عنوان أو فكرة) وتحويلها إلى مخرجات JSON تقنية بالمفاتيح التالية:
 suno_prompt, veo_prompt, seo_metadata
@@ -126,7 +134,7 @@ suno_prompt, veo_prompt, seo_metadata
 IMPORTANT RULES:
 1. In 'suno_prompt', describe the STYLE and INSTRUMENTS only.
 2. DO NOT use specific artist names (e.g., NO "Chillhop", "Lofi Girl").
-3. Use generic terms like "lofi hip hop", "chill beats".
+3. Use generic terms like "lofi hip hop", "chill beats".{aesthetic_rules}
 
 Important: Return ONLY valid JSON block with these exact keys:     """
         
