@@ -278,7 +278,31 @@ REDIS_URL=redis://localhost:6379/0
 
 ## ☁️ VPS / Cloud Deployment
 
-### Option 1: Docker on VPS (Recommended)
+### 🚀 Option 0: One-Command Installer (Easiest!) ⭐⭐⭐
+
+**Just run one command and everything is set up automatically:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/lofi-video-generator/main/install.sh | sudo bash
+```
+
+**What this does:**
+1. ✅ Installs Docker & Docker Compose
+2. ✅ Clones the repository
+3. ✅ Creates `.env` file
+4. ✅ Starts all services
+5. ✅ Installs & configures Nginx
+6. ✅ Opens web setup wizard
+
+**After installation:**
+- Open `http://YOUR_SERVER_IP:8502/setup`
+- Enter your API keys (Kie.ai, Pexels) via the web interface
+- Click "Save & Restart"
+- Done! Start generating videos
+
+---
+
+### Option 1: Docker on VPS (Manual)
 
 **Requirements:**
 - Ubuntu 20.04+ / Debian 11+

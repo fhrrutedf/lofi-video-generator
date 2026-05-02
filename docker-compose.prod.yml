@@ -95,6 +95,19 @@ services:
     restart: unless-stopped
     command: celery -A lofi_gen.tasks beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
+  # Setup Wizard (runs on first install)
+  setup:
+    build: .
+    ports:
+      - "8502:8502"
+    volumes:
+      - ./.env:/app/.env
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./output:/app/output
+    networks:
+      - lofi_network
+    command: streamlit run lofi_gen/setup_web.py --server.address 0.0.0.0 --server.port 8502
+
   nginx:
     image: nginx:alpine
     ports:
