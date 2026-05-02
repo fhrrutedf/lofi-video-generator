@@ -5,6 +5,6 @@
     "video_clip": null,
     "final_video": null
   },
-  "image_path": null,
-  "ai_provider": "auto"
+  "image_path": "N/A",
+  "ai_provider": "gemini"
 }
