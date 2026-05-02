@@ -718,15 +718,9 @@ The tool is **production-ready**! Possible future enhancements:
 
 ---
 
-## 🙏 Credits
 
-Built with:
-- **FFMPEG** - Video processing engine
-- **Python 3** - Automation backbone
-- **Streamlit** - Web interface
-- **Kie.ai** - Music generation API
 
-**Made with ❤️ by Antigravity AI**
+**Made with ❤️ noaf albostaa**
 
 ---
 
