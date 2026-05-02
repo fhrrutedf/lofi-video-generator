@@ -1,0 +1,118 @@
+version: "3.8"
+
+# Production Docker Compose
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-lofi}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme_strong_password}
+      POSTGRES_DB: ${DB_NAME:-lofidb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - lofi_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-lofi} -d ${DB_NAME:-lofidb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - lofi_network
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  api:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-lofi}:${DB_PASSWORD:-changeme_strong_password}@db:5432/${DB_NAME:-lofidb}
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - KIE_API_KEY=${KIE_API_KEY:-}
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
+      - WORKERS=${UVICORN_WORKERS:-4}
+    volumes:
+      - ./output:/app/output
+      - ./temp:/app/temp
+    networks:
+      - lofi_network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    # Production: multiple workers, no reload
+    command: >
+      uvicorn lofi_gen.api_v2:app
+      --host 0.0.0.0
+      --port 8000
+      --workers ${UVICORN_WORKERS:-4}
+      --proxy-headers
+
+  worker:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-lofi}:${DB_PASSWORD:-changeme_strong_password}@db:5432/${DB_NAME:-lofidb}
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - KIE_API_KEY=${KIE_API_KEY:-}
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
+      - CELERY_CONCURRENCY=${CELERY_CONCURRENCY:-2}
+    volumes:
+      - ./output:/app/output
+      - ./temp:/app/temp
+    networks:
+      - lofi_network
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    command: celery -A lofi_gen.tasks worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-2} -n worker@%h
+    deploy:
+      replicas: ${CELERY_WORKERS:-2}
+
+  beat:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-lofi}:${DB_PASSWORD:-changeme_strong_password}@db:5432/${DB_NAME:-lofidb}
+      - REDIS_URL=redis://redis:6379/0
+    networks:
+      - lofi_network
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    command: celery -A lofi_gen.tasks beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./output:/app/output:ro
+    networks:
+      - lofi_network
+    depends_on:
+      - api
+    restart: unless-stopped
+
+networks:
+  lofi_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
